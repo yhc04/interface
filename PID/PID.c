@@ -9,12 +9,13 @@
 // 声明外部变量
 extern MotorHandle_t motor[4];  // 电机控制结构体数组，包含4个电机
 extern uint8_t num;             // 电机数量
+extern Claw_t g_claw;           // 夹爪实例
 
 // 夹爪PID初始化
 void ClawPID_Init(CascadePid *pid)
 {
   // 外环PID初始化 - 位置控制环（角度控制）
-  PID_Init(&pid->outer, 50.0f, 0.5f, 5.0f, 100.0f, 500.0f); 
+  PID_Init(&pid->outer, 8.0f, 0.5f, 5.0f, 100.0f, 500.0f); 
   // 内环PID初始化 - 速度控制环
   PID_Init(&pid->inner, 8.0f, 0.1f, 0.5f, 50.0f, 3000.0f); 
 }
@@ -37,6 +38,29 @@ void CascadePID_Init(CascadePid *pid)
   PID_Init(&pid->outer, 2000.0f, 0.0f, 300.0f, 300.0f, 3500.0f); 
   // 内环PID初始化 - 速度控制环参数
 	PID_Init(&pid->inner, 12.0f, 1.0f, 1.0f, 100.0f, 10000.0f); 
+}
+
+// 夹爪PID计算
+int16_t Claw_PID_Calc(MotorHandle_t *claw_motor)
+{
+    // 夹爪位置控制
+    PID_Calc(&claw_motor->pidset.outer, claw_motor->pidset.outer.target, Claw_GetAngle(&g_claw, claw_motor));
+    claw_motor->pidset.inner.target = claw_motor->pidset.outer.output;
+    PID_Calc(&claw_motor->pidset.inner, claw_motor->pidset.inner.target, (float)claw_motor->info.vel);
+    
+    claw_motor->pidset.output = claw_motor->pidset.inner.output;
+    
+    // 限制电流输出范围
+    if (claw_motor->pidset.output > 10000) claw_motor->pidset.output = 10000;
+    if (claw_motor->pidset.output < -10000) claw_motor->pidset.output = -10000;
+    
+    // 发送3个电机电流（夹爪在电机2位置）
+    motor_current_set(&hfdcan1, 
+        0,                      // X方向静止
+        0,                      // Y方向静止  
+        claw_motor->pidset.output); // 夹爪电流
+    
+    return 0;
 }
 
 // 单级PID计算
@@ -102,12 +126,12 @@ void PID_Calc(PidHandle_t *pid, float reference, float feedback)
 		}
 }
 
-// 串级PID计算
+// 串级PID计算（云台）- 只控制2个电机
 int16_t PID_CascadeCalc(MotorHandle_t *motors, uint8_t num)
 {
-				for (uint8_t i = 0; i < 2; i++)
-				{
-						MotorHandle_t *motor = &motors[i];
+    for (uint8_t i = 0; i < 2 && i < num; i++)
+    {
+        MotorHandle_t *motor = &motors[i];
         // 外环计算：对准误差环
         // 目标永远是0，反馈是当前的对准误差
         PID_Calc(&motor->pidset.outer, motor->pidset.outer.target, motor->pidset.outer.feedbackreal);
@@ -124,11 +148,10 @@ int16_t PID_CascadeCalc(MotorHandle_t *motors, uint8_t num)
         if (motor->pidset.output < -10000) motor->pidset.output = -10000;
     }
     
-    // 通过CAN总线发送电流指令
-    // 电机2、3保持静止（设为0）
+    // 通过CAN总线发送电流指令 - 只发2个电机
     motor_current_set(&hfdcan1,
         motor[0].pidset.output,  // X方向电机电流
-        motor[1].pidset.output);  // Y方向电机电流
-    
+        motor[1].pidset.output,  // Y方向电机电流
+        0);                      // 夹爪电机静止
     return 0;
 }

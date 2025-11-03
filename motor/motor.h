@@ -17,7 +17,7 @@ void FDCAN_Init_motor(FDCAN_HandleTypeDef *hfdcan);
 void get_moto_measure(MotorHandle_t*motor, uint8_t* rxbuff);
 
 //设置电机电流值
-uint8_t motor_current_set(FDCAN_HandleTypeDef* hfdcan, int16_t iq1, int16_t iq2);
+uint8_t motor_current_set(FDCAN_HandleTypeDef*hfdcan,int16_t iq1,int16_t iq2,int16_t iq3);
 
 //位移转电机数据
 float displacement_to_motor_data(float displacement_mm); 

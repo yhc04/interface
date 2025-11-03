@@ -10,6 +10,9 @@ extern uint8_t num;
 // 夹爪PID初始化
 void ClawPID_Init(CascadePid *pid);
 
+// 夹爪PID计算
+int16_t Claw_PID_Calc(MotorHandle_t *claw_motor);
+
 // 单级PID初始化
 void PID_Init(PidHandle_t *pidsetouterinner, float p, float i, float d, float maxI, float maxOut);
 

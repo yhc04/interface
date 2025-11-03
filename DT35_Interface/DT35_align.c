@@ -242,7 +242,7 @@ void Send_DT35_VOFA_Data(void)
     float calibrated_x = align_data.x_distance - 8.8f;
     float calibrated_y = align_data.y_distance - 9.37f;
 
-    float send_data[20] = {
+    float send_data[24] = {
         align_data.rod_center_x,        // 0: 杆圆心X（X对准误差）
         align_data.rod_center_y,        // 1: 杆圆心Y（Y对准误差）
         align_data.alignment_error,     // 2: 总对准误差
@@ -266,9 +266,15 @@ void Send_DT35_VOFA_Data(void)
         
         // 系统状态
         x_bias,                         // 16: X系统偏差
-        y_bias,                      		// 17: Y系统偏差
-				motor[0].pidset.outer.target,
-				motor[0].pidset.inner.target
+        y_bias,                         // 17: Y系统偏差
+        motor[0].pidset.outer.target,   // 18: X外环目标
+        motor[0].pidset.inner.target,   // 19: X内环目标
+        
+        // 电机3（夹爪）状态
+        motor[2].pidset.outer.target,   // 20: 夹爪外环目标（角度）
+        motor[2].pidset.inner.target,   // 21: 夹爪内环目标（速度）
+        motor[2].pidset.output,         // 22: 夹爪电流输出
+        (float)motor[2].info.vel        // 23: 夹爪实际速度
     };
 
     HAL_UART_Transmit(&huart2, (uint8_t*)send_data, sizeof(send_data), 100);
