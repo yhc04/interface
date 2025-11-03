@@ -339,7 +339,7 @@
               <MiscControls></MiscControls>
               <Define>USE_PWR_LDO_SUPPLY,USE_HAL_DRIVER,STM32H723xx</Define>
               <Undefine></Undefine>
-              <IncludePath>../Core/Inc;../Drivers/STM32H7xx_HAL_Driver/Inc;../Drivers/STM32H7xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32H7xx/Include;../Drivers/CMSIS/Include;./DT35_Interface;../DT35_align;../motor;../PID;../Middlewares/Third_Party/FreeRTOS/Source/include;../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2;../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM4F</IncludePath>
+              <IncludePath>../Core/Inc;../Drivers/STM32H7xx_HAL_Driver/Inc;../Drivers/STM32H7xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32H7xx/Include;../Drivers/CMSIS/Include;./DT35_Interface;../DT35_align;.\get_head;.\motor;../Middlewares/Third_Party/FreeRTOS/Source/include;../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2;../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM4F;.\PID</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -669,36 +669,6 @@
               <FileName>system_stm32h7xx.c</FileName>
               <FileType>1</FileType>
               <FilePath>../Core/Src/system_stm32h7xx.c</FilePath>
-            </File>
-          </Files>
-        </Group>
-        <Group>
-          <GroupName>motor</GroupName>
-          <Files>
-            <File>
-              <FileName>motor.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\motor\motor.c</FilePath>
-            </File>
-            <File>
-              <FileName>motor.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>..\motor\motor.h</FilePath>
-            </File>
-          </Files>
-        </Group>
-        <Group>
-          <GroupName>PID</GroupName>
-          <Files>
-            <File>
-              <FileName>PID.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\PID\PID.c</FilePath>
-            </File>
-            <File>
-              <FileName>PID.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>..\PID\PID.h</FilePath>
             </File>
           </Files>
         </Group>
@@ -1337,17 +1307,47 @@
           </Files>
         </Group>
         <Group>
+          <GroupName>PID</GroupName>
+          <Files>
+            <File>
+              <FileName>PID.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\PID\PID.c</FilePath>
+            </File>
+            <File>
+              <FileName>PID.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\PID\PID.h</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>motor</GroupName>
+          <Files>
+            <File>
+              <FileName>motor.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\motor\motor.c</FilePath>
+            </File>
+            <File>
+              <FileName>motor.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\motor\motor.h</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
           <GroupName>get_head</GroupName>
           <Files>
             <File>
               <FileName>get.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\get_head\get.c</FilePath>
+              <FilePath>.\get_head\get.c</FilePath>
             </File>
             <File>
               <FileName>get.h</FileName>
               <FileType>5</FileType>
-              <FilePath>..\get_head\get.h</FilePath>
+              <FilePath>.\get_head\get.h</FilePath>
             </File>
           </Files>
         </Group>

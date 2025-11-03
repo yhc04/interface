@@ -10,11 +10,12 @@
                 "d:\\CHEN\\CUBEproject\\DT35_Interface\\Drivers\\CMSIS\\Include",
                 "d:\\CHEN\\CUBEproject\\DT35_Interface\\MDK-ARM\\DT35_Interface",
                 "d:\\CHEN\\CUBEproject\\DT35_Interface\\DT35_align",
-                "d:\\CHEN\\CUBEproject\\DT35_Interface\\motor",
-                "d:\\CHEN\\CUBEproject\\DT35_Interface\\PID",
+                "d:\\CHEN\\CUBEproject\\DT35_Interface\\MDK-ARM\\get_head",
+                "d:\\CHEN\\CUBEproject\\DT35_Interface\\MDK-ARM\\motor",
                 "d:\\CHEN\\CUBEproject\\DT35_Interface\\Middlewares\\Third_Party\\FreeRTOS\\Source\\include",
                 "d:\\CHEN\\CUBEproject\\DT35_Interface\\Middlewares\\Third_Party\\FreeRTOS\\Source\\CMSIS_RTOS_V2",
                 "d:\\CHEN\\CUBEproject\\DT35_Interface\\Middlewares\\Third_Party\\FreeRTOS\\Source\\portable\\RVDS\\ARM_CM4F",
+                "d:\\CHEN\\CUBEproject\\DT35_Interface\\MDK-ARM\\PID",
                 "D:\\CHEN\\32keil\\ARM\\ARMCLANG\\include",
                 "D:\\CHEN\\32keil\\ARM\\ARMCLANG\\include\\arm_linux",
                 "D:\\CHEN\\32keil\\ARM\\ARMCLANG\\include\\arm_linux_compat",
@@ -23,8 +24,7 @@
                 "d:\\CHEN\\CUBEproject\\DT35_Interface\\Core\\Src",
                 "d:\\CHEN\\CUBEproject\\DT35_Interface\\Drivers\\STM32H7xx_HAL_Driver\\Src",
                 "d:\\CHEN\\CUBEproject\\DT35_Interface\\Middlewares\\Third_Party\\FreeRTOS\\Source",
-                "d:\\CHEN\\CUBEproject\\DT35_Interface\\Middlewares\\Third_Party\\FreeRTOS\\Source\\portable\\MemMang",
-                "d:\\CHEN\\CUBEproject\\DT35_Interface\\get_head"
+                "d:\\CHEN\\CUBEproject\\DT35_Interface\\Middlewares\\Third_Party\\FreeRTOS\\Source\\portable\\MemMang"
             ],
             "defines": [
                 "USE_PWR_LDO_SUPPLY",
