@@ -4,12 +4,22 @@
 #include "fdcan.h"
 #include "usart.h"
 #include <stdio.h>
+#include "get.h"
 
 // 声明外部变量
 extern MotorHandle_t motor[4];  // 电机控制结构体数组，包含4个电机
 extern uint8_t num;             // 电机数量
 
-// PID控制器初始化
+// 夹爪PID初始化
+void ClawPID_Init(CascadePid *pid)
+{
+  // 外环PID初始化 - 位置控制环（角度控制）
+  PID_Init(&pid->outer, 50.0f, 0.5f, 5.0f, 100.0f, 500.0f); 
+  // 内环PID初始化 - 速度控制环
+  PID_Init(&pid->inner, 8.0f, 0.1f, 0.5f, 50.0f, 3000.0f); 
+}
+
+// 单级PID初始化
 void PID_Init(PidHandle_t *pidsetouterinner, float p, float i, float d, float maxI, float maxOut)
 {
   pidsetouterinner->kp = p;                    // 设置比例系数
@@ -20,7 +30,7 @@ void PID_Init(PidHandle_t *pidsetouterinner, float p, float i, float d, float ma
   pidsetouterinner->lastfeedback = 0;          // 初始化上一次反馈值为0
 }
  
-// 串级PID控制器初始化
+// 串级PID初始化（云台）
 void CascadePID_Init(CascadePid *pid)
 {
   // 外环PID初始化 - 位置控制环参数
@@ -29,13 +39,7 @@ void CascadePID_Init(CascadePid *pid)
 	PID_Init(&pid->inner, 12.0f, 1.0f, 1.0f, 100.0f, 10000.0f); 
 }
 
-/**
- * @brief PID计算函数
- * @param pid: PID控制器结构体指针
- * @param reference: 目标值(设定值)
- * @param feedback: 反馈值(实际值)
- * @note 执行完整的PID计算，包括滤波、误差计算、PID分量计算、限幅处理和死区控制
- */
+// 单级PID计算
 void PID_Calc(PidHandle_t *pid, float reference, float feedback)
 {	
     // 低通滤波处理：当前反馈值占30%，历史反馈值占70%，用于平滑信号
@@ -95,19 +99,13 @@ void PID_Calc(PidHandle_t *pid, float reference, float feedback)
 		if(fabs(pid->error) < 0.3f){
 				pid->output = 0;
 				pid->integral = 0;  // 清空积分器，防止积分饱和
-}
+		}
 }
 
-/**
- * @brief 基于对准误差的串级PID控制计算函数
- * @param motors: 电机控制结构体数组指针
- * @param num: 电机数量
- * @return 操作状态码 (0表示成功)
- * @note 外环使用对准误差(mm)，内环使用速度反馈(RPM)
- */
+// 串级PID计算
 int16_t PID_CascadeCalc(MotorHandle_t *motors, uint8_t num)
 {
-				for (uint8_t i = 0; i < 2 && i < num; i++)
+				for (uint8_t i = 0; i < 2; i++)
 				{
 						MotorHandle_t *motor = &motors[i];
         // 外环计算：对准误差环
@@ -130,9 +128,7 @@ int16_t PID_CascadeCalc(MotorHandle_t *motors, uint8_t num)
     // 电机2、3保持静止（设为0）
     motor_current_set(&hfdcan1,
         motor[0].pidset.output,  // X方向电机电流
-        motor[1].pidset.output,  // Y方向电机电流
-        0,                       // 电机3静止
-        0);                      // 电机4静止
+        motor[1].pidset.output);  // Y方向电机电流
     
     return 0;
 }

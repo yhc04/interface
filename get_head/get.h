@@ -4,11 +4,11 @@
 #include "motor.h"
 #include <stdbool.h>
 
-// --- 手动校准宏（现场校准后写入） ---
-// 建议现场读取角度（度）后替换下面值
-#define CLAW_ANGLE_CLOSE_DEG  10.0f   // 示例：完全闭合角度（度）
-#define CLAW_ANGLE_OPEN_DEG   160.0f  // 示例：完全张开角度（度）
-#define CLAW_SELF_CHECK_TOL_DEG 5.0f   // 自检容差（度）
+//// --- 手动校准宏（现场校准后写入） ---
+//// 建议现场读取角度（度）后替换下面值
+//#define CLAW_ANGLE_CLOSE_DEG  10.0f   // 示例：完全闭合角度（度）
+//#define CLAW_ANGLE_OPEN_DEG   160.0f  // 示例：完全张开角度（度）
+//#define CLAW_SELF_CHECK_TOL_DEG 5.0f   // 自检容差（度）
 
 // 夹爪状态
 typedef enum {
@@ -38,17 +38,16 @@ typedef struct {
 void Claw_Init(Claw_t *claw, uint8_t motor_id);              // 初始化
 bool Claw_Calibrate(Claw_t *claw, MotorHandle_t *motors);    // 校准
 bool Claw_SetPosition(Claw_t *claw, float percent);          // 设置位置
-void Claw_Update(Claw_t *claw, MotorHandle_t *motors);
+void Claw_Update(Claw_t *claw, MotorHandle_t *motors);       // 更新控制
 
-// 启动自检：使用宏定义的角度做一次快速检查，失败时返回 false
-bool Claw_SelfCheck(Claw_t *claw, MotorHandle_t *motors);
 
-// FreeRTOS 任务入口（模板）：在任务中周期调用 Claw_Update 并处理校准请求
-void Claw_Task(void *argument);
 
 // 工具函数
 bool Claw_IsReady(Claw_t *claw);
 float Claw_GetAngle(Claw_t *claw, MotorHandle_t *motor);
 bool Claw_CheckStall( MotorHandle_t *motor);
+
+// 全局夹爪实例
+extern Claw_t g_claw;
 
 #endif

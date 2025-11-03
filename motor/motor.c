@@ -17,7 +17,14 @@ void Motor_Init(void)
 {
     for(int i = 0; i < 4; i++) {
         memset(&motor[i], 0, sizeof(MotorHandle_t));
-        CascadePID_Init(&motor[i].pidset);
+        if (i < 2) {
+            // 对准电机使用对准PID
+            CascadePID_Init(&motor[i].pidset);
+        } else if (i == 2) {
+            // 夹爪电机使用夹爪PID
+            ClawPID_Init(&motor[i].pidset);
+        }
+        // 电机3保持默认
     }
 }
 
@@ -74,12 +81,12 @@ void get_moto_measure(MotorHandle_t* motor, uint8_t* rxbuff)
 				motor->info.round_cnt--; // 反向溢出，圈数减1
 		}
 
-		// 计算总位置 = 圈数 × 每圈位置数 + 当前位置 - 位置偏移
-		motor->info.pos_total = motor->info.round_cnt * 8192 + motor->info.pos - motor->info.pos_offset;
+		// 计算总位置 = 圈数 × 8192 + 当前位置
+		motor->info.pos_total = motor->info.round_cnt * 8192 + motor->info.pos;
 		}
 
-// 设置4个电机的电流值并通过FDCAN发送 0表示成功
-uint8_t motor_current_set(FDCAN_HandleTypeDef* hfdcan, int16_t iq1, int16_t iq2, int16_t iq3, int16_t iq4)
+// 设置2个电机的电流值并通过FDCAN发送 0表示成功
+uint8_t motor_current_set(FDCAN_HandleTypeDef* hfdcan, int16_t iq1, int16_t iq2)
 {
     FDCAN_TxHeaderTypeDef TxHeader;
 
@@ -94,15 +101,15 @@ uint8_t motor_current_set(FDCAN_HandleTypeDef* hfdcan, int16_t iq1, int16_t iq2,
     TxHeader.TxEventFifoControl  = FDCAN_NO_TX_EVENTS;      // 无TX事件
     TxHeader.MessageMarker       = 0;                       // 消息标记
 
-    // 将4个16位电流值打包到8字节缓冲区
+    // 将2个16位电流值打包到8字节缓冲区，后两个电机设为0
     txbuff[0] = (uint8_t)(iq1 >> 8);      // iq1高字节
     txbuff[1] = (uint8_t)(iq1 & 0xFF);    // iq1低字节
     txbuff[2] = (uint8_t)(iq2 >> 8);      // iq2高字节
     txbuff[3] = (uint8_t)(iq2 & 0xFF);    // iq2低字节
-    txbuff[4] = (uint8_t)(iq3 >> 8);      // iq3高字节
-    txbuff[5] = (uint8_t)(iq3 & 0xFF);    // iq3低字节
-    txbuff[6] = (uint8_t)(iq4 >> 8);      // iq4高字节
-    txbuff[7] = (uint8_t)(iq4 & 0xFF);    // iq4低字节
+    txbuff[4] = 0;                        // iq3高字节 = 0
+    txbuff[5] = 0;                        // iq3低字节 = 0
+    txbuff[6] = 0;                        // iq4高字节 = 0
+    txbuff[7] = 0;                        // iq4低字节 = 0
     
     // 将消息添加到发送FIFO队列
     HAL_FDCAN_AddMessageToTxFifoQ(hfdcan, &TxHeader, txbuff);
