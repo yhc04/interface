@@ -18,9 +18,9 @@ void Claw_Init(Claw_t *claw, uint8_t motor_id)
     claw->state = CLAW_READY;
     claw->calibrated = false;
     claw->target_percent = 0.5f;
-    claw->angle_close = 0.0f;
-    claw->angle_open = 0.0f;
-    claw->angle_current = 0.0f;
+    claw->pos_close = 0.0f;
+    claw->pos_open = 0.0f;
+    claw->pos_current = 0.0f;
 }
 
 // 校准
@@ -30,109 +30,85 @@ bool Claw_Calibrate(Claw_t *claw, MotorHandle_t *motors)
     
     claw->state = CLAW_CALIBRATING;
     
-    // 1. 记录起始角度（当前位置）
-    int32_t start_pos = motor->info.pos_total;
+    // 1. 找闭合位置
+    int16_t current = 2000;  // 固定电流
+    uint32_t timeout = HAL_GetTick() + 4000;
     
-    // 2. 找闭合位置 - 先让电机转动一段时间再检测堵转
-    int16_t current = 800;  // 固定电流值
-    uint32_t timeout = HAL_GetTick() + 5000;
-    bool found_close = false;
-    
-    // 先让电机转动300ms，确保脱离初始位置
+    // 先转动300ms避免初始误判
     uint32_t start_time = HAL_GetTick();
     while(HAL_GetTick() - start_time < 300) {
         motor_current_set(&hfdcan1, 0, 0, current);
         osDelay(10);
     }
     
-    // 现在开始检测堵转
-    int32_t last_check_pos = motor->info.pos_total;
+    // 检测堵转
+    int32_t last_pos = motor->info.pos_total;
     uint8_t stall_count = 0;
     
     while(HAL_GetTick() < timeout) {
         motor_current_set(&hfdcan1, 0, 0, current);
         
-        // 简单的堵转检测：连续3次检查位置变化很小
-        int32_t pos_diff = motor->info.pos_total - last_check_pos;
+        int32_t pos_diff = motor->info.pos_total - last_pos;
         if (pos_diff < 0) pos_diff = -pos_diff;
         
         if(pos_diff < 10) {
             stall_count++;
         } else {
             stall_count = 0;
-            last_check_pos = motor->info.pos_total;
+            last_pos = motor->info.pos_total;
         }
         
         if(stall_count >= 3) {
-            int32_t close_pos = motor->info.pos_total;
-            claw->angle_close = Claw_GetAngle(claw, motor);
-            found_close = true;
+            claw->pos_close = motor->info.pos_total;
             break;
         }
-        
-        osDelay(50);  // 50ms检查一次
+        osDelay(50);
     }
     
-    if (!found_close) {
-        claw->state = CLAW_ERROR;
-        return false;
-    }
+    // 2. 反向找张开位置
+    current = -2000;  // 反向电流
+    timeout = HAL_GetTick() + 4000;
     
-    // 3. 反向脱离堵转
-    current = -800;  // 反向电流
-    timeout = HAL_GetTick() + 3000;
-    while(HAL_GetTick() < timeout) {
-        motor_current_set(&hfdcan1, 0, 0, current);
-        osDelay(10);
-    }
-    
-    // 4. 找张开位置 - 同样先转动一段时间
-    current = -800;  // 反向电流
-    timeout = HAL_GetTick() + 5000;
-    bool found_open = false;
-    
-    // 先让电机转动300ms
+    // 先转动300ms
     start_time = HAL_GetTick();
     while(HAL_GetTick() - start_time < 300) {
         motor_current_set(&hfdcan1, 0, 0, current);
         osDelay(10);
     }
     
-    // 现在开始检测堵转
-    last_check_pos = motor->info.pos_total;
+    // 检测堵转
+    last_pos = motor->info.pos_total;
     stall_count = 0;
     
     while(HAL_GetTick() < timeout) {
         motor_current_set(&hfdcan1, 0, 0, current);
         
-        // 简单的堵转检测
-        int32_t pos_diff = motor->info.pos_total - last_check_pos;
+        int32_t pos_diff = motor->info.pos_total - last_pos;
         if (pos_diff < 0) pos_diff = -pos_diff;
         
         if(pos_diff < 10) {
             stall_count++;
         } else {
             stall_count = 0;
-            last_check_pos = motor->info.pos_total;
+            last_pos = motor->info.pos_total;
         }
         
         if(stall_count >= 3) {
-            int32_t open_pos = motor->info.pos_total;
-            claw->angle_open = Claw_GetAngle(claw, motor);
-            found_open = true;
+            claw->pos_open = motor->info.pos_total;
             break;
         }
-        
-        osDelay(50);  // 50ms检查一次
+        osDelay(50);
     }
     
-    if (!found_open) {
-        claw->state = CLAW_ERROR;
-        return false;
-    }
-    
-    // 5. 停止电机
+    // 停止电机
     motor_current_set(&hfdcan1, 0, 0, 0);
+    
+    // 确保闭合位置 < 张开位置
+    if (claw->pos_close > claw->pos_open) {
+        int32_t temp = claw->pos_close;
+        claw->pos_close = claw->pos_open;
+        claw->pos_open = temp;
+    }
     
     claw->calibrated = true;
     claw->state = CLAW_READY;
@@ -152,26 +128,24 @@ bool Claw_SetPosition(Claw_t *claw, float percent)
     return true;
 }
 
-// 更新
+// 更新夹爪控制
 void Claw_Update(Claw_t *claw, MotorHandle_t *motors)
 {
-    if(!claw->calibrated) return;
+    if (!claw->calibrated) return;
     
     MotorHandle_t *motor = &motors[claw->motor_id];
+    claw->pos_current = motor->info.pos_total;
     
-    // 更新当前角度
-    claw->angle_current = Claw_GetAngle(claw, motor);
-    
-    // 如果正在移动，计算目标角度并设置
     if(claw->state == CLAW_MOVING) {
-        float target_angle = claw->angle_close + 
-                           (claw->angle_open - claw->angle_close) * claw->target_percent;
+        // 计算目标位置（编码器脉冲）
+        int32_t target_pos = claw->pos_close + 
+                           (claw->pos_open - claw->pos_close) * claw->target_percent;
         
-        motor->pidset.outer.target = target_angle;
+        motor->pidset.outer.target = target_pos;
         
         // 检查是否到达目标
-        float error = fabs(claw->angle_current - target_angle);
-        if(error < 2.0f) { // 2度容差
+        int32_t error = abs(claw->pos_current - target_pos);
+        if(error < 50) {  // 50个脉冲容差
             claw->state = CLAW_READY;
         }
     }

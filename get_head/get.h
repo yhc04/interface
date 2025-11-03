@@ -24,10 +24,10 @@ typedef struct {
     uint8_t motor_id;        // 电机编号
     bool calibrated;         // 是否已校准
     
-    // 校准数据
-    float angle_close;       // 闭合角度
-    float angle_open;        // 张开角度
-    float angle_current;     // 当前角度
+    // 相对位置（基于编码器脉冲）
+    int32_t pos_close;       // 闭合位置（编码器脉冲）
+    int32_t pos_open;        // 张开位置（编码器脉冲）
+    int32_t pos_current;     // 当前位置（编码器脉冲）
     
     // 控制
     float target_percent;    // 目标位置百分比 (0-1)
